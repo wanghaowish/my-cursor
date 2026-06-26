@@ -31,7 +31,7 @@
 
 | 行业 | Page ID | URL |
 |------|---------|-----|
-| PCB | `38a63db5-6956-817b-b7e7-c9f7f2c91f7b` | https://app.notion.com/p/38a63db56956817bb7e7c9f7f2c91f7b |
+| PCB | `38b63db5-6956-812e-a05c-cc7980fb2234` | https://app.notion.com/p/38a63db56956812ea05ccc7980fb2234 |
 
 > 新行业页创建后无需写入本文件；以 Notion 实时查询为准。
 
