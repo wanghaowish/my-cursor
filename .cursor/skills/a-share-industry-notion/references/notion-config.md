@@ -43,6 +43,16 @@
 | 全文替换 | `notion-update-page` | `command: replace_content` |
 | 局部替换 | `notion-update-page` | `command: update_content` + `content_updates` |
 
+## 图片外链（picGo）
+
+| 字段 | 值 |
+|------|-----|
+| 仓库 | `wanghaowish/picGo`（SSH host: `github-picgo`） |
+| 目录 | `img/cursor/` |
+| 命名 | `{行业名称}-map-uhd.png`（与标题中行业名一致，如 `PCB`、`固态电池`、`CPO`） |
+| 外链模板 | `https://raw.githubusercontent.com/wanghaowish/picGo/main/img/cursor/{行业名称}-map-uhd.png` |
+| 推送脚本 | `.cursor/skills/a-share-industry-notion/scripts/push-to-picgo.sh` |
+
 ## 图片限制
 
 - MCP **不支持**本地文件上传

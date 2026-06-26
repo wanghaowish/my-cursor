@@ -67,7 +67,7 @@ notion-search query="A股 {行业} 行业全链路分析" page_url="38a63db5-695
 
 ### 3. 生成信息图 HTML
 
-1. 复制 `assets/industry-chain-map.template.html` 到临时路径，如 `/opt/cursor/artifacts/{行业slug}-map.html`
+1. 复制 `assets/industry-chain-map.template.html` 到临时路径，如 `/opt/cursor/artifacts/{行业名称}-map.html`
 2. 按行业替换模板中所有 PCB 专属内容，保持**三栏蓝/绿/橙**结构与模块卡片样式不变
 3. **必须保留**完整版布局（上游 A–F 模块、中游龙头速览 `leader-box`、下游 A–F、底部五维分析）
 4. **不要改** `.page { overflow: visible; }`（`overflow: hidden` 会裁切截图）
@@ -84,8 +84,8 @@ notion-search query="A股 {行业} 行业全链路分析" page_url="38a63db5-695
 npm install puppeteer-core --prefix /opt/cursor/artifacts
 
 node .cursor/skills/a-share-industry-notion/scripts/screenshot-uhd.js \
-  /opt/cursor/artifacts/{行业slug}-map.html \
-  /opt/cursor/artifacts/assets/{行业slug}-map-uhd.png
+  /opt/cursor/artifacts/{行业名称}-map.html \
+  /opt/cursor/artifacts/assets/{行业名称}-map-uhd.png
 ```
 
 验收标准：
@@ -96,27 +96,36 @@ node .cursor/skills/a-share-industry-notion/scripts/screenshot-uhd.js \
 
 Chrome 路径默认 `/usr/local/bin/google-chrome`；不可用则设置环境变量 `CHROME_PATH`。
 
-### 5. 上传图片获取外链（picGo / GitHub raw）
+### 5. 上传图片获取外链（picGo `img/cursor/`）
 
 Cloud Agent 环境需已配置 `PICGO_DEPLOY_KEY`（见 `.cursor/setup-picgo-ssh.sh`）。
 
-```bash
-# 克隆 picGo 图床仓库（SSH deploy key）
-git clone git@github-picgo:wanghaowish/picGo.git /tmp/picGo
+**命名规则**：图片存于 `img/cursor/`，文件名用**行业名称**（与 Notion 标题中的 `{行业}` 一致），如 `PCB`、`固态电池`、`CPO`。
 
-# 复制截图到 img/ 并推送
-cp /opt/cursor/artifacts/assets/{行业slug}-map-uhd.png /tmp/picGo/img/{行业slug}-map-uhd.png
-cd /tmp/picGo
-git add img/{行业slug}-map-uhd.png
-git commit -m "feat: add {行业} industry chain map"
+```bash
+# 一键推送（推荐）
+bash .cursor/skills/a-share-industry-notion/scripts/push-to-picgo.sh {行业名称} \
+  /opt/cursor/artifacts/assets/{行业名称}-map-uhd.png
+
+# 或手动：
+git clone git@github-picgo:wanghaowish/picGo.git /tmp/picGo
+mkdir -p /tmp/picGo/img/cursor
+cp /opt/cursor/artifacts/assets/{行业名称}-map-uhd.png /tmp/picGo/img/cursor/{行业名称}-map-uhd.png
+cd /tmp/picGo && git add img/cursor/{行业名称}-map-uhd.png
+git commit -m "feat(cursor): add {行业名称} industry chain map"
 git push origin main
 ```
 
 永久外链格式：
 
 ```
-https://raw.githubusercontent.com/wanghaowish/picGo/main/img/{行业slug}-map-uhd.png
+https://raw.githubusercontent.com/wanghaowish/picGo/main/img/cursor/{行业名称}-map-uhd.png
 ```
+
+示例：
+- PCB → `.../img/cursor/PCB-map-uhd.png`
+- 固态电池 → `.../img/cursor/固态电池-map-uhd.png`
+- CPO → `.../img/cursor/CPO-map-uhd.png`
 
 告知用户：GitHub raw 链接长期有效；若 Notion 显示仍嫌模糊，可下载原图后本地上传。
 
@@ -187,6 +196,7 @@ https://raw.githubusercontent.com/wanghaowish/picGo/main/img/{行业slug}-map-uh
 |------|------|
 | `assets/industry-chain-map.template.html` | 三栏信息图 HTML 模板（以 PCB 为范例） |
 | `scripts/screenshot-uhd.js` | Puppeteer 5× 全页截图 |
+| `scripts/push-to-picgo.sh` | 推送截图到 picGo `img/cursor/` 并输出 raw 外链 |
 | `references/content-outline.md` | Notion 正文 11 章大纲 |
 | `references/notion-config.md` | 父页面 ID、命名约定 |
 
