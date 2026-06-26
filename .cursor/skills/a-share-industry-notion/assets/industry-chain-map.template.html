@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<!--
+  A股行业全链路信息图 HTML 模板
+  用法：复制本文件，替换所有 PCB 示例内容为目标行业，保持 CSS 与 DOM 结构不变。
+  截图：node scripts/screenshot-uhd.js path/to/your-map.html path/to/output.png
+  注意：.page 必须 overflow: visible；保持 max-width:1280px + body padding 以获得完整高度。
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A股PCB行业全链路图谱</title>
+  <style>
+    :root {
+      --blue: #1a5fb4;
+      --blue-light: #e8f2fc;
+      --blue-border: #62a0ea;
+      --green: #2ec27e;
+      --green-dark: #1c7a4e;
+      --green-light: #e6f7ef;
+      --green-border: #57d9a3;
+      --orange: #e66100;
+      --orange-light: #fff3e8;
+      --orange-border: #ff9f43;
+      --gray: #5e5c64;
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --shadow: 0 4px 24px rgba(26, 95, 180, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      background: var(--bg);
+      color: #1d1d1f;
+      line-height: 1.5;
+      padding: 32px 20px 48px;
+    }
+
+    .page {
+      max-width: 1280px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow: visible;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 36px 32px 28px;
+      background: linear-gradient(180deg, #f0f6ff 0%, #ffffff 100%);
+      border-bottom: 1px solid #e8edf5;
+    }
+
+    .header h1 {
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #0d1b2a;
+      margin-bottom: 10px;
+    }
+
+    .header .subtitle {
+      font-size: 15px;
+      color: var(--gray);
+    }
+
+    /* One-liner box */
+    .oneliner {
+      margin: 24px 32px 0;
+      border: 2px solid var(--blue-border);
+      border-radius: 14px;
+      background: var(--blue-light);
+      padding: 18px 22px;
+    }
+
+    .oneliner-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--blue);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .oneliner ul {
+      list-style: none;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .oneliner li {
+      padding: 4px 0;
+      padding-left: 18px;
+      position: relative;
+    }
+
+    .oneliner li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--blue);
+      font-weight: bold;
+    }
+
+    /* Three columns */
+    .chain {
+      display: grid;
+      grid-template-columns: 1fr 48px 1fr 48px 1fr;
+      align-items: stretch;
+      padding: 28px 24px;
+      gap: 0;
+    }
+
+    .arrow-col {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: #c0c7d4;
+      font-weight: 300;
+    }
+
+    .column {
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+
+    .col-header {
+      text-align: center;
+      padding: 14px 12px;
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+
+    .col-up .col-header { background: var(--blue); }
+    .col-mid .col-header { background: var(--green-dark); }
+    .col-down .col-header { background: var(--orange); }
+
+    .col-body {
+      flex: 1;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .col-up .col-body { background: var(--blue-light); border: 2px solid var(--blue-border); border-top: none; border-radius: 0 0 16px 16px; }
+    .col-mid .col-body { background: var(--green-light); border: 2px solid var(--green-border); border-top: none; border-radius: 0 0 16px 16px; }
+    .col-down .col-body { background: var(--orange-light); border: 2px solid var(--orange-border); border-top: none; border-radius: 0 0 16px 16px; }
+
+    /* Module cards */
+    .module {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .module-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .module-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .col-up .module-icon { background: #d4e8ff; }
+    .col-mid .module-icon { background: #c8f0de; }
+    .col-down .module-icon { background: #ffe4cc; }
+
+    .module-label {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 2px;
+    }
+
+    .col-up .module-label { background: #d4e8ff; color: var(--blue); }
+    .col-mid .module-label { background: #c8f0de; color: var(--green-dark); }
+    .col-down .module-label { background: #ffe4cc; color: var(--orange); }
+
+    .module-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a1a1a;
+      line-height: 1.3;
+    }
+
+    .module-desc {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 8px;
+      padding-left: 46px;
+    }
+
+    .stocks {
+      padding-left: 46px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .stock {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: #f5f6f8;
+      color: #333;
+      white-space: nowrap;
+    }
+
+    .stock.leader {
+      background: #fff8e1;
+      border: 1px solid #ffc107;
+      font-weight: 600;
+      color: #7a5c00;
+    }
+
+    .stock.leader::before {
+      content: "★ ";
+      color: #f5a623;
+    }
+
+    /* Leader summary box */
+    .leader-box {
+      background: var(--green-dark);
+      color: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-top: 4px;
+    }
+
+    .leader-box h4 {
+      font-size: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .leader-box ul {
+      list-style: none;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .leader-box li {
+      padding: 2px 0;
+      opacity: 0.95;
+    }
+
+    .leader-box strong { color: #a8f0c8; }
+
+    /* Bottom analysis */
+    .analysis {
+      margin: 0 32px 32px;
+      border: 2px solid #e0e4ec;
+      border-radius: 14px;
+      padding: 20px 24px;
+      background: #fafbfc;
+    }
+
+    .analysis h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #1a1a1a;
+    }
+
+    .factors {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .factor {
+      background: #fff;
+      border-radius: 10px;
+      padding: 12px;
+      border: 1px solid #e8eaed;
+    }
+
+    .factor-num {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--blue);
+      margin-bottom: 4px;
+    }
+
+    .factor-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .factor-desc {
+      font-size: 11px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 11px;
+      color: #999;
+      padding: 0 32px 24px;
+    }
+
+    @media (max-width: 1100px) {
+      .chain {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .arrow-col { transform: rotate(90deg); padding: 8px 0; }
+      .factors { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .factors { grid-template-columns: 1fr; }
+      .header h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <h1>A股 PCB 行业全链路图谱</h1>
+      <p class="subtitle">以 PCB 行业为例 · 产业链结构、应用场景与代表性公司梳理</p>
+    </header>
+
+    <div class="oneliner">
+      <div class="oneliner-title">📌 一句话看行业</div>
+      <ul>
+        <li><strong>本质：</strong>PCB 是电子产品的「骨架 + 神经系统」，承担元器件连接、支撑与信号传输。</li>
+        <li><strong>链路：</strong>上游材料 / 设备 → 中游 PCB 制造 → 下游终端应用，景气自上而下传导。</li>
+        <li><strong>主线：</strong>高频高速、高层数、HDI、IC 载板、AI 服务器、汽车电子是当前核心投资主题。</li>
+      </ul>
+    </div>
+
+    <div class="chain">
+      <!-- 上游 -->
+      <div class="column col-up">
+        <div class="col-header">上游：原材料与设备</div>
+        <div class="col-body">
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">🧱</div>
+              <div>
+                <span class="module-label">A</span>
+                <div class="module-title">覆铜板 CCL</div>
+              </div>
+            </div>
+            <div class="module-desc">PCB 核心基材，占成本约 30–40%，高速 CCL 壁垒最高</div>
+            <div class="stocks">
+              <span class="stock leader">生益科技 600183</span>
+              <span class="stock">南亚新材 688519</span>
+              <span class="stock">华正新材 603186</span>
+              <span class="stock">金安国纪 002636</span>
+              <span class="stock">宏昌电子 603002</span>
+            </div>
+          </div>
+
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">🥉</div>
+              <div>
+                <span class="module-label">B</span>
+                <div class="module-title">铜箔</div>
+              </div>
+            </div>
+            <div class="module-desc">导电层材料，HVLP 超低轮廓铜箔用于高频高速传输</div>
+            <div class="stocks">
+              <span class="stock leader">德福科技 301511</span>
+              <span class="stock">铜冠铜箔 301217</span>
+              <span class="stock">嘉元科技 688388</span>
+              <span class="stock">诺德股份 600110</span>
+            </div>
+          </div>
+
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">🧵</div>
+              <div>
+                <span class="module-label">C</span>
+                <div class="module-title">玻纤纱 / 电子布</div>
+              </div>
+            </div>
+            <div class="module-desc">CCL 增强骨架，极薄电子布（4μm 以下）技术壁垒极高</div>
+            <div class="stocks">
+              <span class="stock leader">宏和科技 603256</span>
+              <span class="stock">中国巨石 600176</span>
+              <span class="stock">国际复材 301526</span>
+              <span class="stock">中材科技 002080</span>
+              <span class="stock">菲利华 300395</span>
+            </div>
+          </div>
+
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">🧪</div>
+              <div>
+                <span class="module-label">D</span>
+                <div class="module-title">树脂 / 高分子材料</div>
+              </div>
+            </div>
+            <div class="module-desc">影响耐热性、介电常数，Low-Dk 树脂用于高速基材</div>
+            <div class="stocks">
+              <span class="stock leader">圣泉集团 605589</span>
+              <span class="stock">东材科技 601208</span>
+              <span class="stock">联瑞新材 688300</span>
+              <span class="stock">呈和科技 688625</span>
+            </div>
+          </div>
+
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">🎨</div>
+              <div>
+                <span class="module-label">E</span>
+                <div class="module-title">化学品 / 油墨 / 膜材</div>
+              </div>
+            </div>
+            <div class="module-desc">与线路形成、阻焊、电镀等制程相关</div>
+            <div class="stocks">
+              <span class="stock">容大感光 300576</span>
+              <span class="stock">天承科技 688603</span>
+              <span class="stock">光华科技 002741</span>
+              <span class="stock">飞凯材料 300398</span>
+            </div>
+          </div>
+
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">⚙️</div>
+              <div>
+                <span class="module-label">F</span>
+                <div class="module-title">专用设备</div>
+              </div>
+            </div>
+            <div class="module-desc">钻孔、曝光、电镀、检测，扩产周期核心受益环节</div>
+            <div class="stocks">
+              <span class="stock leader">大族数控 301200</span>
+              <span class="stock leader">芯碁微装 688630</span>
+              <span class="stock">鼎泰高科 301377</span>
+              <span class="stock">东威科技 688700</span>
+              <span class="stock">三孚新科 688359</span>
+              <span class="stock">正业科技 300410</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow-col">→</div>
+
+      <!-- 中游 -->
+      <div class="column col-mid">
+        <div class="col-header">中游：PCB 制造</div>
+        <div class="col-body">
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">📟</div>
+              <div>
+                <span class="module-label">A</span>
+                <div class="module-title">刚性板 / 多层板</div>
+              </div>
+            </div>
+            <div class="module-desc">应用最广，服务器、通信、汽车等场景主力品类</div>
+            <div class="stocks">
+              <span class="stock leader">沪电股份 002463</span>
+              <span class="stock">景旺电子 603228</span>
+              <span class="stock">崇达技术 002815</span>
+              <span class="stock">奥士康 002913</span>
+              <span class="stock">世运电路 603920</span>
+              <span class="stock">博敏电子 603936</span>
+            </div>
+          </div>
+
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">🔲</div>
+              <div>
+                <span class="module-label">B</span>
+                <div class="module-title">HDI 高密度互连板</div>
+              </div>
+            </div>
+            <div class="module-desc">细线路、高集成，手机 / 汽车 / AI 服务器核心品类</div>
+            <div class="stocks">
+              <span class="stock leader">胜宏科技 300476</span>
+              <span class="stock leader">深南电路 002916</span>
+              <span class="stock">广合科技 001389</span>
+              <span class="stock">生益电子 688183</span>
+            </div>
+          </div>
+
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">📱</div>
+              <div>
+                <span class="module-label">C</span>
+                <div class="module-title">FPC 柔性板</div>
+              </div>
+            </div>
+            <div class="module-desc">轻薄可弯折，智能手机、可穿戴、折叠屏主力</div>
+            <div class="stocks">
+              <span class="stock leader">鹏鼎控股 002938</span>
+              <span class="stock">东山精密 002384</span>
+              <span class="stock">弘信电子 300657</span>
+              <span class="stock">中京电子 002579</span>
+            </div>
+          </div>
+
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">💎</div>
+              <div>
+                <span class="module-label">D</span>
+                <div class="module-title">IC 载板 / 封装基板</div>
+              </div>
+            </div>
+            <div class="module-desc">技术壁垒最高，AI 芯片先进封装核心材料</div>
+            <div class="stocks">
+              <span class="stock leader">深南电路 002916</span>
+              <span class="stock">兴森科技 002436</span>
+              <span class="stock">崇达技术 002815</span>
+            </div>
+          </div>
+
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">🔬</div>
+              <div>
+                <span class="module-label">E</span>
+                <div class="module-title">样板 / 小批量板</div>
+              </div>
+            </div>
+            <div class="module-desc">研发打样需求，客户分散、品类多、交期快</div>
+            <div class="stocks">
+              <span class="stock">兴森科技 002436</span>
+              <span class="stock">崇达技术 002815</span>
+              <span class="stock">迅捷兴 688655</span>
+              <span class="stock">一博科技 301366</span>
+            </div>
+          </div>
+
+          <div class="leader-box">
+            <h4>🏆 中游核心龙头速览</h4>
+            <ul>
+              <li><strong>鹏鼎控股</strong> — 消费电子 FPC / SLP 全球龙头，苹果链核心</li>
+              <li><strong>深南电路</strong> — 高端通信 + 服务器 + 载板全能型选手</li>
+              <li><strong>沪电股份</strong> — 高频高速 / 高层数 PCB，AI 服务器核心受益</li>
+              <li><strong>胜宏科技</strong> — AI 算力 / HPC 用 HDI 板，业绩弹性最大</li>
+              <li><strong>景旺电子</strong> — 汽车 + 多层板均衡布局，稳健型标的</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow-col">→</div>
+
+      <!-- 下游 -->
+      <div class="column col-down">
+        <div class="col-header">下游：终端应用场景</div>
+        <div class="col-body">
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">🖥️</div>
+              <div>
+                <span class="module-label">A</span>
+                <div class="module-title">AI 服务器 / 数据中心</div>
+              </div>
+            </div>
+            <div class="module-desc">拉动高层数、高频高速、HDI 板需求爆发，当前最景气</div>
+            <div class="stocks">
+              <span class="stock leader">沪电股份</span>
+              <span class="stock leader">胜宏科技</span>
+              <span class="stock">广合科技</span>
+              <span class="stock">生益电子</span>
+            </div>
+          </div>
+
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">📡</div>
+              <div>
+                <span class="module-label">B</span>
+                <div class="module-title">通信 / 5G / 光模块</div>
+              </div>
+            </div>
+            <div class="module-desc">高可靠性、低损耗要求，交换机升级持续拉动</div>
+            <div class="stocks">
+              <span class="stock leader">深南电路</span>
+              <span class="stock">沪电股份</span>
+              <span class="stock">生益电子</span>
+            </div>
+          </div>
+
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">📲</div>
+              <div>
+                <span class="module-label">C</span>
+                <div class="module-title">消费电子</div>
+              </div>
+            </div>
+            <div class="module-desc">FPC、HDI 用量大，量大但竞争充分、增速偏稳</div>
+            <div class="stocks">
+              <span class="stock leader">鹏鼎控股</span>
+              <span class="stock">东山精密</span>
+              <span class="stock">景旺电子</span>
+            </div>
+          </div>
+
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">🚗</div>
+              <div>
+                <span class="module-label">D</span>
+                <div class="module-title">汽车 / 新能源车 / 智驾</div>
+              </div>
+            </div>
+            <div class="module-desc">单车 PCB 价值量持续提升，长周期成长赛道</div>
+            <div class="stocks">
+              <span class="stock leader">世运电路</span>
+              <span class="stock">景旺电子</span>
+              <span class="stock">深南电路</span>
+              <span class="stock">沪电股份</span>
+            </div>
+          </div>
+
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">🏭</div>
+              <div>
+                <span class="module-label">E</span>
+                <div class="module-title">工控 / 医疗 / 安防</div>
+              </div>
+            </div>
+            <div class="module-desc">看重可靠性与认证，小批量、多品种特征明显</div>
+            <div class="stocks">
+              <span class="stock">崇达技术</span>
+              <span class="stock">奥士康</span>
+              <span class="stock">博敏电子</span>
+              <span class="stock">超声电子 000823</span>
+            </div>
+          </div>
+
+          <div class="module">
+            <div class="module-head">
+              <div class="module-icon">🔬</div>
+              <div>
+                <span class="module-label">F</span>
+                <div class="module-title">半导体封装</div>
+              </div>
+            </div>
+            <div class="module-desc">IC 载板为核心，先进封装升级带来结构性机会</div>
+            <div class="stocks">
+              <span class="stock leader">深南电路</span>
+              <span class="stock">兴森科技</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="analysis">
+      <h3>📈 怎么看 PCB 行业股票</h3>
+      <div class="factors">
+        <div class="factor">
+          <div class="factor-num">①</div>
+          <div class="factor-title">看需求</div>
+          <div class="factor-desc">AI 算力、交换机升级、汽车电子化渗透率，决定各细分赛道景气斜率</div>
+        </div>
+        <div class="factor">
+          <div class="factor-num">②</div>
+          <div class="factor-title">看产品</div>
+          <div class="factor-desc">高层数、高频高速、HDI、IC 载板附加值远高于普通多层板</div>
+        </div>
+        <div class="factor">
+          <div class="factor-num">③</div>
+          <div class="factor-title">看成本</div>
+          <div class="factor-desc">铜价、覆铜板、电子布价格及汇率，影响毛利率与顺价能力</div>
+        </div>
+        <div class="factor">
+          <div class="factor-num">④</div>
+          <div class="factor-title">看客户</div>
+          <div class="factor-desc">大客户绑定与认证周期是核心壁垒，新进者突破难度极大</div>
+        </div>
+        <div class="factor">
+          <div class="factor-num">⑤</div>
+          <div class="factor-title">看景气</div>
+          <div class="factor-desc">当前服务器 &gt; 汽车 &gt; 消费电子；上游材料与设备景气同步传导</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="footer-note">以上仅为行业产业链梳理，不构成投资建议 · 数据截至 2026 年初公开信息</p>
+  </div>
+</body>
+</html>
