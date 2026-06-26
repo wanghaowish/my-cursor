@@ -96,15 +96,29 @@ node .cursor/skills/a-share-industry-notion/scripts/screenshot-uhd.js \
 
 Chrome 路径默认 `/usr/local/bin/google-chrome`；不可用则设置环境变量 `CHROME_PATH`。
 
-### 5. 上传图片获取外链
+### 5. 上传图片获取外链（picGo / GitHub raw）
+
+Cloud Agent 环境需已配置 `PICGO_DEPLOY_KEY`（见 `.cursor/setup-picgo-ssh.sh`）。
 
 ```bash
-curl -s -F "file=@/path/to/{行业slug}-map-uhd.png" https://tmpfiles.org/api/v1/upload
+# 克隆 picGo 图床仓库（SSH deploy key）
+git clone git@github-picgo:wanghaowish/picGo.git /tmp/picGo
+
+# 复制截图到 img/ 并推送
+cp /opt/cursor/artifacts/assets/{行业slug}-map-uhd.png /tmp/picGo/img/{行业slug}-map-uhd.png
+cd /tmp/picGo
+git add img/{行业slug}-map-uhd.png
+git commit -m "feat: add {行业} industry chain map"
+git push origin main
 ```
 
-下载链格式：`https://tmpfiles.org/dl/{id}/{filename}.png`（把返回 URL 的 `/xxx/` 改为 `/dl/xxx/`）。
+永久外链格式：
 
-告知用户：tmpfiles 约 2 小时过期，建议下载后本地上传到 Notion。
+```
+https://raw.githubusercontent.com/wanghaowish/picGo/main/img/{行业slug}-map-uhd.png
+```
+
+告知用户：GitHub raw 链接长期有效；若 Notion 显示仍嫌模糊，可下载原图后本地上传。
 
 ### 6. 撰写 Notion 正文
 

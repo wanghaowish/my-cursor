@@ -1,0 +1,3 @@
+{
+  "install": "bash .cursor/setup-picgo-ssh.sh"
+}
